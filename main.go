@@ -8,9 +8,13 @@ import (
 	"github.com/qiniu/api.v7/auth/qbox"
 	"github.com/qiniu/api.v7/storage"
 	"golang.org/x/net/context"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -29,20 +33,24 @@ func main() {
 
 	defer db.Close()
 
+	syncDownFile(db)
+
 	for {
-		syncFile(db)
+		syncDownFile(db) //同步远端有本地无的文件
+		syncUpFile(db)   //同步本端有远端无的文件
+		// xxxxxxxxxxxx //删除本地无远端有的文件
 		fmt.Println("ansyncFile over")
 		time.Sleep(time.Second * config.Duration)
 	}
 
 }
 
-func syncFile(db *sql.DB) {
+func syncUpFile(db *sql.DB) {
 
 	//获取todo文件夹中的文件
-	todofiles := listFile(config.SyncFolder)
+	localFiles := getLocalFiles(config.SyncFolder)
 
-	for _, f := range todofiles {
+	for _, f := range localFiles {
 
 		modTime, size, count, err := getFileStoreInfo(db, f.PATH)
 		if err != nil {
@@ -82,6 +90,66 @@ func syncFile(db *sql.DB) {
 			continue
 		}
 
+	}
+}
+
+func syncDownFile(db *sql.DB) {
+	remoteFiles := getRemoteFileList()
+
+	for _, rf := range remoteFiles {
+		_, _, count, err := getFileStoreInfo(db, rf.Key)
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+
+		if count == 0 { //清单中不存在此文件，
+			//下载到本地，并且记录到清单中
+			fmt.Println("下载文件...", rf.Key)
+			//获取URL，下载
+			dURL := getDownloadURL(rf.Key)
+			res, err := http.Get(dURL)
+			if err != nil {
+				log.Println("download error", err.Error())
+				continue
+			}
+
+			//创建目录
+			if err = os.MkdirAll(filepath.Dir(rf.Key), 0755); err != nil {
+				log.Println("create folder error", err.Error())
+				continue
+			}
+
+			//创建文件
+			file, err := os.Create(rf.Key)
+			if err != nil {
+				log.Println("create file error", err.Error())
+				continue
+			}
+
+			//写入到文件
+			_, err = io.Copy(file, res.Body)
+			if err != nil {
+				log.Println("write file error", err.Error())
+				continue
+			}
+
+			defer file.Close()
+
+			fileInfo, err := file.Stat()
+			if err != nil {
+				log.Println("get file info err:", err.Error())
+				continue
+			}
+
+			//记录到文件清单中
+			if _, err = db.Exec("INSERT INTO files (fileName,modTime,size) VALUES (?,?,?)", rf.Key, fileInfo.ModTime(), fileInfo.Size()); err != nil {
+				log.Println("更新数据错误", err.Error())
+			}
+
+			fmt.Println("文件保存完成")
+
+		}
 	}
 }
 
@@ -130,12 +198,12 @@ type FileInfo struct {
 	Size    int64
 }
 
-func listFile(folder string) (fs []FileInfo) {
+func getLocalFiles(folder string) (fs []FileInfo) {
 	files, _ := ioutil.ReadDir(folder)
 	for _, file := range files {
 
 		if file.IsDir() {
-			fs = append(fs, listFile(folder+"/"+file.Name())...)
+			fs = append(fs, getLocalFiles(folder+"/"+file.Name())...)
 		} else {
 			fs = append(fs, FileInfo{Name: file.Name(),
 				PATH:    folder + "/" + file.Name(),
@@ -156,6 +224,7 @@ type Config struct {
 	SyncFolder     string        `json:"syncFolder"`
 	Duration       time.Duration `json:"duration"`
 	DownloadDomain string        `json:"downloadDomain"`
+	Zone           string        `json:"zone"`
 }
 
 func loadConfig() (err error) {
@@ -187,7 +256,18 @@ func upload(key, localFile string) (ret storage.PutRet, err error) {
 
 	cfg := storage.Config{}
 	// 空间对应的机房
-	cfg.Zone = &storage.ZoneHuanan
+
+	switch config.Zone {
+	case "华东":
+		cfg.Zone = &storage.ZoneHuadong
+	case "华北":
+		cfg.Zone = &storage.ZoneHuabei
+	case "华南":
+		cfg.Zone = &storage.ZoneHuanan
+	case "北美":
+		cfg.Zone = &storage.ZoneBeimei
+	}
+
 	// 是否使用https域名
 	cfg.UseHTTPS = false
 	// 上传是否使用CDN上传加速
@@ -207,6 +287,38 @@ func getDownloadURL(fileName string) (downloadURL string) {
 	key := url.QueryEscape(fileName)
 	deadline := time.Now().Add(time.Second * 3600).Unix() //1小时有效期
 	downloadURL = storage.MakePrivateURL(mac, config.DownloadDomain, key, deadline)
+	downloadURL = "http://" + downloadURL
+	return
+}
+
+func getRemoteFileList() (remoteFiles []storage.ListItem) {
+	mac := qbox.NewMac(config.AccessKey, config.SecretKey)
+	cfg := storage.Config{
+		// 是否使用https域名进行资源管理
+		UseHTTPS: false,
+	}
+	bucketManager := storage.NewBucketManager(mac, &cfg)
+	limit := 1000
+	prefix := config.SyncFolder
+	delimiter := ""
+	//初始列举marker为空
+	marker := ""
+	for {
+		entries, _, nextMarker, hashNext, err := bucketManager.ListFiles(config.Bucket, prefix, delimiter, marker, limit)
+		if err != nil {
+			fmt.Println("list error,", err)
+			break
+		}
+
+		remoteFiles = append(remoteFiles, entries...)
+
+		if hashNext {
+			marker = nextMarker
+		} else {
+			//list end
+			break
+		}
+	}
 
 	return
 }

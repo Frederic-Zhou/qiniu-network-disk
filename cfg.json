@@ -1,8 +1,9 @@
 {
-    "accessKey": "sEW5g6F6NCDroLVbUUfnxyp876u46VwwTNoVmfjO",
-    "secretKey": "luXH9KhtpGqet5XaXm862fdr6RJf2DUxCz-obagj",
-    "bucket": "voice-back",
+    "accessKey": "Veml2SAjNUHY7rrhV15MaATq1Gz50o5qHVbhgY5Q",
+    "secretKey": "eypCHM-wEaq4JVo4Ddyr6TZMLMjCpTFxaYJKVsWl",
+    "bucket": "default",
     "syncFolder": "./todo",
     "duration": 10,
-    "downloadDomain": "p8rgnrwsm.bkt.clouddn.com"
+    "downloadDomain": "ogev3u2hs.bkt.gdipper.com",
+    "zone": "北美"
 }
