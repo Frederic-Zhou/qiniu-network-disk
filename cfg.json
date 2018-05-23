@@ -1,0 +1,8 @@
+{
+    "accessKey": "sEW5g6F6NCDroLVbUUfnxyp876u46VwwTNoVmfjO",
+    "secretKey": "luXH9KhtpGqet5XaXm862fdr6RJf2DUxCz-obagj",
+    "bucket": "voice-back",
+    "syncFolder": "./todo",
+    "duration": 10,
+    "downloadDomain": "p8rgnrwsm.bkt.clouddn.com"
+}
