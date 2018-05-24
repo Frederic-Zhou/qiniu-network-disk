@@ -36,7 +36,6 @@ func main() {
 	for {
 		syncDownFile(db) //同步远端有本地无的文件
 		syncUpFile(db)   //同步本端有远端无的文件,删除本段有远端无的文件
-		fmt.Println("syncUpFile over")
 		time.Sleep(time.Second * config.Duration)
 	}
 
@@ -54,11 +53,11 @@ func syncUpFile(db *sql.DB) {
 
 		modTime, size, count, downloading, err := getFileStoreInfo(db, f.PATH)
 		if err != nil {
-			fmt.Println("getFileStoreInfo: ", err.Error())
+			log.Println("getFileStoreInfo: ", err.Error())
 			continue
 		}
 
-		fmt.Printf("name:%s ; count:%d ; modTime: %s ;size:%d ", f.PATH, count, f.ModTime.Format("2006/01/02@15:04:05"), f.Size)
+		//fmt.Printf("name:%s ; count:%d ; modTime: %s ;size:%d ", f.PATH, count, f.ModTime.Format("2006/01/02@15:04:05"), f.Size)
 
 		if count == 0 { //文件不存在于文件清单中
 
@@ -88,9 +87,6 @@ func syncUpFile(db *sql.DB) {
 		} else {
 			//将文件存在状态改为1
 			db.Exec("UPDATE files SET exist=1 WHERE fileName=?", f.PATH)
-
-			fmt.Println("最新，无需同步")
-			continue
 		}
 
 	}
@@ -105,7 +101,7 @@ func syncDownFile(db *sql.DB) {
 	for _, rf := range remoteFiles {
 		_, _, count, _, err := getFileStoreInfo(db, rf.Key)
 		if err != nil {
-			fmt.Println("download getFileStoreInfo", err.Error())
+			log.Println("download getFileStoreInfo", err.Error())
 			continue
 		}
 
@@ -121,6 +117,7 @@ func syncDownFile(db *sql.DB) {
 			if err != nil {
 				//如果下载文件出错，回退文件清单
 				db.Exec("DELETE FROM files WHERE fileName=?", rf.Key)
+				continue
 			}
 
 			//更新到文件清单中
@@ -293,8 +290,6 @@ func loadConfig() (err error) {
 	if err != nil {
 		log.Fatalln("配置文件不是标准的Json", err.Error())
 	}
-
-	fmt.Println(config)
 
 	return
 }
