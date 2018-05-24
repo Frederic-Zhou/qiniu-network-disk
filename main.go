@@ -26,16 +26,24 @@ func main() {
 		log.Fatalln("配置文件:", err.Error())
 	}
 
+	fmt.Println("配置文件读取完成...")
+
 	db, err := createDB()
 	if err != nil {
 		log.Fatalln("数据库错误", err.Error())
 	}
 
+	fmt.Println("库加载完成...")
+
 	defer db.Close()
 
 	for {
+		fmt.Println("将要下载远端文件...")
 		syncDownFile(db) //同步远端有本地无的文件
-		syncUpFile(db)   //同步本端有远端无的文件,删除本段有远端无的文件
+		fmt.Println("将要上传本地文件...")
+		syncUpFile(db) //同步本端有远端无的文件,删除本段有远端无的文件
+
+		fmt.Println("======================")
 		time.Sleep(time.Second * config.Duration)
 	}
 
@@ -43,12 +51,15 @@ func main() {
 
 func syncUpFile(db *sql.DB) {
 
+	fmt.Println("设置文件清单所有文件存在状态为未知...")
 	//将所有文件清单中的状态设置为0
 	db.Exec("UPDATE files SET exist=0 WHERE downloading=0")
 
+	fmt.Println("获取本地文件清单...")
 	//获取todo文件夹中的文件
 	localFiles := getLocalFiles(config.SyncFolder)
 
+	fmt.Println("比对文件中...")
 	for _, f := range localFiles {
 
 		modTime, size, count, downloading, err := getFileStoreInfo(db, f.PATH)
@@ -91,13 +102,19 @@ func syncUpFile(db *sql.DB) {
 
 	}
 
+	fmt.Println("比对上传文件完成...")
+
+	fmt.Println("删除状态为未知的远端文件和库文件清单...")
 	//删除所有 exist=0的文件
 	delNotExistFiles(db)
 }
 
 func syncDownFile(db *sql.DB) {
+
+	fmt.Println("获取远端文件清单...")
 	remoteFiles := getRemoteFileList()
 
+	fmt.Println("比对本地库文件清单和远端文件清单，下载本地文件清单中不存在的文件...")
 	for _, rf := range remoteFiles {
 		_, _, count, _, err := getFileStoreInfo(db, rf.Key)
 		if err != nil {
@@ -124,8 +141,6 @@ func syncDownFile(db *sql.DB) {
 			if _, err = db.Exec("UPDATE files SET downloading=0,modTime=?,size=? WHERE fileName=?", fileInfo.ModTime(), fileInfo.Size(), rf.Key); err != nil {
 				log.Println("更新数据错误", err.Error())
 			}
-
-			fmt.Println("文件保存完成")
 
 		}
 	}
