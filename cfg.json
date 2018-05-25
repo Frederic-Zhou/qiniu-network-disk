@@ -2,7 +2,7 @@
     "accessKey": "Veml2SAjNUHY7rrhV15MaATq1Gz50o5qHVbhgY5Q",
     "secretKey": "eypCHM-wEaq4JVo4Ddyr6TZMLMjCpTFxaYJKVsWl",
     "bucket": "default",
-    "syncFolder": "./todo",
+    "syncFolder": "./myfolder",
     "duration": 10,
     "downloadDomain": "ogev3u2hs.bkt.gdipper.com",
     "zone": "北美"

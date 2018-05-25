@@ -43,7 +43,7 @@ func main() {
 		fmt.Println("将要上传本地文件...")
 		syncUpFile(db) //同步本端有远端无的文件,删除本段有远端无的文件
 
-		fmt.Println("======================")
+		log.Println("======================")
 		time.Sleep(time.Second * config.Duration)
 	}
 
