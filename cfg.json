@@ -1,9 +1,9 @@
 {
-    "accessKey": "Veml2SAjNUHY7rrhV15MaATq1Gz50o5qHVbhgY5Q",
-    "secretKey": "eypCHM-wEaq4JVo4Ddyr6TZMLMjCpTFxaYJKVsWl",
+    "accessKey": "your accesskey",
+    "secretKey": "your secretkey",
     "bucket": "mycloud",
     "syncFolder": "./myfolder",
     "duration": 10,
-    "downloadDomain": "http://p9xnzre9w.bkt.clouddn.com",
+    "downloadDomain": "your domain include 'http://'",
     "zone": "华南"
 }
