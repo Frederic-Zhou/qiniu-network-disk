@@ -351,7 +351,6 @@ func getDownloadURL(fileName string) (downloadURL string) {
 	key := url.QueryEscape(fileName)
 	deadline := time.Now().Add(time.Second * 3600).Unix() //1小时有效期
 	downloadURL = storage.MakePrivateURL(mac, config.DownloadDomain, key, deadline)
-	downloadURL = "http://" + downloadURL
 	return
 }
 
