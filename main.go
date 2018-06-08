@@ -284,13 +284,13 @@ func getLocalFiles(folder string) (fs []FileInfo) {
 
 // Config 配置文件对象
 type Config struct {
-	AccessKey      string        `json:"accessKey"`
-	SecretKey      string        `json:"secretKey"`
-	Bucket         string        `json:"bucket"`
-	SyncFolder     string        `json:"syncFolder"`
-	Duration       time.Duration `json:"duration"`
-	DownloadDomain string        `json:"downloadDomain"`
-	Zone           string        `json:"zone"`
+	AccessKey  string        `json:"accessKey"`
+	SecretKey  string        `json:"secretKey"`
+	Bucket     string        `json:"bucket"`
+	SyncFolder string        `json:"syncFolder"`
+	Duration   time.Duration `json:"duration"`
+	Domain     string        `json:"domain"`
+	Zone       string        `json:"zone"`
 }
 
 func loadConfig() (err error) {
@@ -350,7 +350,7 @@ func getDownloadURL(fileName string) (downloadURL string) {
 	mac := qbox.NewMac(config.AccessKey, config.SecretKey)
 	key := url.QueryEscape(fileName)
 	deadline := time.Now().Add(time.Second * 3600).Unix() //1小时有效期
-	downloadURL = storage.MakePrivateURL(mac, config.DownloadDomain, key, deadline)
+	downloadURL = storage.MakePrivateURL(mac, config.Domain, key, deadline)
 	return
 }
 

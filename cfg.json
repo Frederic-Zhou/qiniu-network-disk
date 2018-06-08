@@ -1,9 +1,9 @@
 {
-    "accessKey": "your accesskey",
-    "secretKey": "your secretkey",
-    "bucket": "mycloud",
-    "syncFolder": "./myfolder",
+    "accessKey": "",
+    "secretKey": "",
+    "bucket": "",
+    "syncFolder": "./",
     "duration": 10,
-    "downloadDomain": "your domain include 'http://'",
+    "domain": "http://",
     "zone": "华南"
 }
